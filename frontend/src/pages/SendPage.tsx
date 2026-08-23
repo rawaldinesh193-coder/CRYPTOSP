@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { GlassCard } from '../components/GlassCard';
 import { GlassButton } from '../components/GlassButton';
 import { Navbar } from '../components/Navbar';
-import { CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
+import { QRScannerModal, QRScannerResult } from '../components/QRScannerModal';
+import { CheckCircle2, AlertCircle, ArrowRight, Camera } from 'lucide-react';
 
 export const SendPage: React.FC = () => {
   const { user, token, refreshUser } = useAuth();
@@ -24,6 +25,7 @@ export const SendPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [transactionResult, setTransactionResult] = useState<any>(null);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   const handleWalletIdChange = async (val: string) => {
     const upper = val.toUpperCase().trim();
@@ -49,6 +51,14 @@ export const SendPage: React.FC = () => {
         setResolving(false);
       }
     }
+  };
+
+  const handleScanSuccess = (result: QRScannerResult) => {
+    if (result.walletId) {
+      handleWalletIdChange(result.walletId);
+    }
+    if (result.amount) setAmount(result.amount);
+    if (result.asset) setAsset(result.asset);
   };
 
   const handleReview = (e: React.FormEvent) => {
@@ -122,17 +132,38 @@ export const SendPage: React.FC = () => {
           {step === 'input' && (
             <form onSubmit={handleReview} className="space-y-6">
               <div>
-                <label className="block text-xs font-mono text-neutral-400 uppercase tracking-wider mb-2">
-                  Recipient Cryptosp Wallet ID
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={recipientWalletId}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleWalletIdChange(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white font-mono placeholder-neutral-500 focus:outline-none focus:border-white/40 transition-all uppercase"
-                  placeholder="CSP-XXXXXXXXXXXX"
-                />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-mono text-neutral-400 uppercase tracking-wider">
+                    Recipient Cryptosp Wallet ID
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsScannerOpen(true)}
+                    className="text-xs font-mono text-amber-400 hover:text-amber-300 flex items-center space-x-1"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Scan with Camera</span>
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={recipientWalletId}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleWalletIdChange(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white font-mono placeholder-neutral-500 focus:outline-none focus:border-white/40 transition-all uppercase pr-10"
+                    placeholder="CSP-XXXXXXXXXXXX"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsScannerOpen(true)}
+                    className="absolute right-3 top-3 text-neutral-400 hover:text-white"
+                    title="Scan QR Code"
+                  >
+                    <Camera className="w-5 h-5" />
+                  </button>
+                </div>
+
                 {resolving && <p className="text-xs text-neutral-400 font-mono mt-1">Resolving wallet owner...</p>}
                 {recipientInfo && (
                   <div className="mt-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-mono flex items-center justify-between">
@@ -264,6 +295,12 @@ export const SendPage: React.FC = () => {
           )}
         </GlassCard>
       </div>
+
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={handleScanSuccess}
+      />
     </div>
   );
 };

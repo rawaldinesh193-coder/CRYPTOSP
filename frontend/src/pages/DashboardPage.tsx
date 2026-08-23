@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GlassCard } from '../components/GlassCard';
 import { GlassButton } from '../components/GlassButton';
 import { TransactionRow } from '../components/TransactionRow';
 import { Navbar } from '../components/Navbar';
-import { Send, QrCode, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { QRScannerModal, QRScannerResult } from '../components/QRScannerModal';
+import { Send, QrCode, RefreshCw, AlertTriangle, ShieldCheck, Camera } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
   const { user, token } = useAuth();
+  const navigate = useNavigate();
   const [walletData, setWalletData] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   const loadDashboardData = async () => {
     if (!token) return;
@@ -36,6 +39,14 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     loadDashboardData();
   }, [token]);
+
+  const handleScanSuccess = (result: QRScannerResult) => {
+    const params = new URLSearchParams();
+    if (result.walletId) params.append('walletId', result.walletId);
+    if (result.amount) params.append('amount', result.amount);
+    if (result.asset) params.append('asset', result.asset);
+    navigate(`/send?${params.toString()}`);
+  };
 
   return (
     <div className="min-h-screen bg-[#030305] text-white bg-liquid-mesh">
@@ -68,6 +79,15 @@ export const DashboardPage: React.FC = () => {
             >
               <RefreshCw className="w-4 h-4" />
             </button>
+            <GlassButton
+              variant="secondary"
+              size="md"
+              onClick={() => setIsScannerOpen(true)}
+              className="flex items-center space-x-2 text-amber-300 border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20"
+            >
+              <Camera className="w-4 h-4 text-amber-400" />
+              <span>Scan QR</span>
+            </GlassButton>
             <Link to="/send">
               <GlassButton variant="primary" size="md" className="flex items-center space-x-2">
                 <Send className="w-4 h-4" />
@@ -127,25 +147,25 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             <div className="space-y-3">
+              <button onClick={() => setIsScannerOpen(true)} className="w-full text-left">
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all flex items-center justify-between group">
+                  <div className="flex items-center space-x-3">
+                    <Camera className="w-5 h-5 text-amber-400" />
+                    <div>
+                      <p className="text-sm font-semibold text-amber-300">Camera QR Scanner</p>
+                      <p className="text-xs text-neutral-400">Scan & auto-fill payment</p>
+                    </div>
+                  </div>
+                </div>
+              </button>
+
               <Link to="/send" className="block">
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-between group">
                   <div className="flex items-center space-x-3">
                     <Send className="w-5 h-5 text-white" />
                     <div>
                       <p className="text-sm font-semibold text-white">Send Asset</p>
-                      <p className="text-xs text-neutral-400">By Wallet ID or QR</p>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-
-              <Link to="/receive" className="block">
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-between group">
-                  <div className="flex items-center space-x-3">
-                    <QrCode className="w-5 h-5 text-amber-400" />
-                    <div>
-                      <p className="text-sm font-semibold text-white">Generate QR</p>
-                      <p className="text-xs text-neutral-400">Receive payment</p>
+                      <p className="text-xs text-neutral-400">By Wallet ID</p>
                     </div>
                   </div>
                 </div>
@@ -190,6 +210,12 @@ export const DashboardPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={handleScanSuccess}
+      />
     </div>
   );
 };
