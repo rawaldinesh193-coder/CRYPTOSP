@@ -3,21 +3,25 @@ import { prisma } from '@cryptosp/database';
 
 const router = Router();
 
-// In-memory cache for market data
 let marketCache: { data: any[]; lastUpdated: number } | null = null;
-const CACHE_TTL_MS = 30000; // 30 seconds
+const CACHE_TTL_MS = 30000;
 
 async function fetchLiveMarketData() {
   if (marketCache && Date.now() - marketCache.lastUpdated < CACHE_TTL_MS) {
     return { data: marketCache.data, isLive: true };
   }
 
-  // Configured Phoenix Coin price
-  const settings = await prisma.systemSettings.findFirst();
-  const phoenixPrice = settings ? Number(settings.phoenixCoinPriceUsd.toString()) : 10.00;
+  let phoenixPrice = 10.00;
+  try {
+    const settings = await prisma.systemSettings.findFirst();
+    if (settings && settings.phoenixCoinPriceUsd) {
+      phoenixPrice = Number(settings.phoenixCoinPriceUsd.toString());
+    }
+  } catch (dbErr) {
+    console.warn('Database query for systemSettings failed, using default PHX price $10.00:', dbErr);
+  }
 
   try {
-    // Fetch live market data from public CoinGecko API
     const response = await fetch(
       'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,binancecoin,solana,ripple,cardano,dogecoin&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true'
     );
@@ -124,7 +128,6 @@ async function fetchLiveMarketData() {
     console.warn('External Market API unavailable, using cached rates:', err);
   }
 
-  // Fallback default dataset if external API fails (Section 50 compliance)
   const fallbackAssets = [
     { symbol: 'PHX', name: 'Phoenix Coin', priceUsd: phoenixPrice, change24h: 0.0, isInternal: true, lastUpdated: new Date().toISOString() },
     { symbol: 'BTC', name: 'Bitcoin', priceUsd: 64250.00, change24h: 1.85, isInternal: false, lastUpdated: new Date().toISOString() },
@@ -136,7 +139,6 @@ async function fetchLiveMarketData() {
   return { data: fallbackAssets, isLive: false };
 }
 
-// GET /api/v1/markets
 router.get('/', async (req: Request, res: Response) => {
   try {
     const marketResult = await fetchLiveMarketData();

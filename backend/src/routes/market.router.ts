@@ -12,8 +12,15 @@ async function fetchLiveMarketData() {
     return { data: marketCache.data, isLive: true };
   }
 
-  const settings = await prisma.systemSettings.findFirst();
-  const phoenixPrice = settings ? Number(settings.phoenixCoinPriceUsd.toString()) : 10.00;
+  let phoenixPrice = 10.00;
+  try {
+    const settings = await prisma.systemSettings.findFirst();
+    if (settings && settings.phoenixCoinPriceUsd) {
+      phoenixPrice = Number(settings.phoenixCoinPriceUsd.toString());
+    }
+  } catch (dbErr) {
+    console.warn('Database query for systemSettings failed, using default PHX price $10.00:', dbErr);
+  }
 
   try {
     const response = await fetch(
