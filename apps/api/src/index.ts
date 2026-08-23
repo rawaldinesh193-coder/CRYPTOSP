@@ -20,6 +20,26 @@ app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Welcome & Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    service: 'CRYPTOSP API Engine',
+    status: 'ONLINE',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      ready: '/ready',
+      auth: '/api/v1/auth',
+      wallets: '/api/v1/wallets',
+      transfers: '/api/v1/transfers',
+      transactions: '/api/v1/transactions',
+      markets: '/api/v1/markets',
+      admin: '/api/v1/admin',
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Health check endpoints
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'CRYPTOSP API', timestamp: new Date().toISOString() });
