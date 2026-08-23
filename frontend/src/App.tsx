@@ -10,6 +10,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { SendPage } from './pages/SendPage';
 import { ReceivePage } from './pages/ReceivePage';
+import { ScanPage } from './pages/ScanPage';
 import { TransactionsPage } from './pages/TransactionsPage';
 import { MarketsPage } from './pages/MarketsPage';
 import { PhoenixPage } from './pages/PhoenixPage';
@@ -50,6 +51,7 @@ export const App: React.FC = () => {
               <Route path="/markets" element={<MarketsPage />} />
               <Route path="/phoenix" element={<PhoenixPage />} />
               <Route path="/security" element={<SecurityPage />} />
+              <Route path="/scan" element={<ScanPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
@@ -63,7 +65,6 @@ export const App: React.FC = () => {
               <Route path="/wallet" element={<ProtectedUserRoute><DashboardPage /></ProtectedUserRoute>} />
               <Route path="/send" element={<ProtectedUserRoute><SendPage /></ProtectedUserRoute>} />
               <Route path="/receive" element={<ProtectedUserRoute><ReceivePage /></ProtectedUserRoute>} />
-              <Route path="/scan" element={<ProtectedUserRoute><SendPage /></ProtectedUserRoute>} />
               <Route path="/transactions" element={<ProtectedUserRoute><TransactionsPage /></ProtectedUserRoute>} />
 
               {/* Privileged Admin Routes */}

@@ -1,23 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { GlassCard } from '../components/GlassCard';
 import { GlassButton } from '../components/GlassButton';
 import { MarketTicker } from '../components/MarketTicker';
-import { Flame, Layers, Lock, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { QRScannerModal, QRScannerResult } from '../components/QRScannerModal';
+import { Flame, CheckCircle2, QrCode } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const [marketData, setMarketData] = useState<any[]>([]);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch('/api/v1/markets')
       .then((res) => res.json())
       .then((json) => {
-        if (json.success) setMarketData(json.data.assets);
+        if (json && json.success && Array.isArray(json.data?.assets)) setMarketData(json.data.assets);
       })
       .catch((err) => console.error('Failed to load market data:', err));
   }, []);
+
+  const handleScanSuccess = (result: QRScannerResult) => {
+    const params = new URLSearchParams();
+    if (result.walletId) params.append('walletId', result.walletId);
+    if (result.amount) params.append('amount', result.amount);
+    if (result.asset) params.append('asset', result.asset);
+    navigate(`/send?${params.toString()}`);
+  };
 
   return (
     <div className="min-h-screen bg-[#030305] text-white overflow-x-hidden bg-liquid-mesh">
@@ -38,12 +49,22 @@ export const LandingPage: React.FC = () => {
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to="/register">
+          <GlassButton
+            variant="secondary"
+            size="lg"
+            onClick={() => setIsScannerOpen(true)}
+            className="w-full sm:w-auto flex items-center justify-center space-x-2 text-amber-300 border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20"
+          >
+            <QrCode className="w-5 h-5 text-amber-400" />
+            <span>Scan QR / Barcode</span>
+          </GlassButton>
+
+          <Link to="/register" className="w-full sm:w-auto">
             <GlassButton variant="primary" size="lg" className="w-full sm:w-auto">
               Create Cryptosp Account
             </GlassButton>
           </Link>
-          <Link to="/login">
+          <Link to="/login" className="w-full sm:w-auto">
             <GlassButton variant="outline" size="lg" className="w-full sm:w-auto">
               Access Wallet
             </GlassButton>
@@ -155,6 +176,12 @@ export const LandingPage: React.FC = () => {
       </section>
 
       <Footer />
+
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={handleScanSuccess}
+      />
     </div>
   );
 };
