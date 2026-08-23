@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
@@ -39,46 +40,48 @@ const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <AdminAuthProvider>
-        <Router>
-          <Routes>
-            {/* Public User Routes */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/markets" element={<MarketsPage />} />
-            <Route path="/phoenix" element={<PhoenixPage />} />
-            <Route path="/security" element={<SecurityPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/risk" element={<RiskPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <AdminAuthProvider>
+          <Router>
+            <Routes>
+              {/* Public User Routes */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/markets" element={<MarketsPage />} />
+              <Route path="/phoenix" element={<PhoenixPage />} />
+              <Route path="/security" element={<SecurityPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/risk" element={<RiskPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
 
-            {/* Authenticated User Wallet Routes */}
-            <Route path="/dashboard" element={<ProtectedUserRoute><DashboardPage /></ProtectedUserRoute>} />
-            <Route path="/wallet" element={<ProtectedUserRoute><DashboardPage /></ProtectedUserRoute>} />
-            <Route path="/send" element={<ProtectedUserRoute><SendPage /></ProtectedUserRoute>} />
-            <Route path="/receive" element={<ProtectedUserRoute><ReceivePage /></ProtectedUserRoute>} />
-            <Route path="/scan" element={<ProtectedUserRoute><SendPage /></ProtectedUserRoute>} />
-            <Route path="/transactions" element={<ProtectedUserRoute><TransactionsPage /></ProtectedUserRoute>} />
+              {/* Authenticated User Wallet Routes */}
+              <Route path="/dashboard" element={<ProtectedUserRoute><DashboardPage /></ProtectedUserRoute>} />
+              <Route path="/wallet" element={<ProtectedUserRoute><DashboardPage /></ProtectedUserRoute>} />
+              <Route path="/send" element={<ProtectedUserRoute><SendPage /></ProtectedUserRoute>} />
+              <Route path="/receive" element={<ProtectedUserRoute><ReceivePage /></ProtectedUserRoute>} />
+              <Route path="/scan" element={<ProtectedUserRoute><SendPage /></ProtectedUserRoute>} />
+              <Route path="/transactions" element={<ProtectedUserRoute><TransactionsPage /></ProtectedUserRoute>} />
 
-            {/* Privileged Admin Routes */}
-            <Route path="/admin/login" element={<AdminLoginPage />} />
-            <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboardPage /></ProtectedAdminRoute>} />
-            <Route path="/admin/users" element={<ProtectedAdminRoute><AdminUsersPage /></ProtectedAdminRoute>} />
-            <Route path="/admin/finance" element={<ProtectedAdminRoute><AdminFinancePage /></ProtectedAdminRoute>} />
-            <Route path="/admin/deposits" element={<ProtectedAdminRoute><AdminFinancePage /></ProtectedAdminRoute>} />
-            <Route path="/admin/audit" element={<ProtectedAdminRoute><AdminAuditPage /></ProtectedAdminRoute>} />
-            <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettingsPage /></ProtectedAdminRoute>} />
+              {/* Privileged Admin Routes */}
+              <Route path="/admin/login" element={<AdminLoginPage />} />
+              <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboardPage /></ProtectedAdminRoute>} />
+              <Route path="/admin/users" element={<ProtectedAdminRoute><AdminUsersPage /></ProtectedAdminRoute>} />
+              <Route path="/admin/finance" element={<ProtectedAdminRoute><AdminFinancePage /></ProtectedAdminRoute>} />
+              <Route path="/admin/deposits" element={<ProtectedAdminRoute><AdminFinancePage /></ProtectedAdminRoute>} />
+              <Route path="/admin/audit" element={<ProtectedAdminRoute><AdminAuditPage /></ProtectedAdminRoute>} />
+              <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettingsPage /></ProtectedAdminRoute>} />
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Router>
-      </AdminAuthProvider>
-    </AuthProvider>
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Router>
+        </AdminAuthProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 
