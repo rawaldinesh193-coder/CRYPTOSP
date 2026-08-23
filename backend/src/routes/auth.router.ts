@@ -127,9 +127,10 @@ router.post('/register', async (req, res) => {
       },
     });
   } catch (err: any) {
+    console.error('❌ Registration Exception:', err);
     return res.status(500).json({
       success: false,
-      error: { code: 'SERVER_ERROR', message: err.message },
+      error: { code: 'SERVER_ERROR', message: err.message || 'Internal registration failure' },
     });
   }
 });
@@ -205,9 +206,10 @@ router.post('/login', async (req, res) => {
       },
     });
   } catch (err: any) {
+    console.error('❌ Login Exception:', err);
     return res.status(500).json({
       success: false,
-      error: { code: 'SERVER_ERROR', message: err.message },
+      error: { code: 'SERVER_ERROR', message: err.message || 'Internal login failure' },
     });
   }
 });
@@ -244,6 +246,7 @@ router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response)
       },
     });
   } catch (err: any) {
+    console.error('❌ Auth /me Exception:', err);
     return res.status(500).json({
       success: false,
       error: { code: 'SERVER_ERROR', message: err.message },
