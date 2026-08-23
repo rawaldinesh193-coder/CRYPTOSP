@@ -1,0 +1,263 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum AccountStatus {
+  ACTIVE
+  RESTRICTED
+  SUSPENDED
+  CLOSED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum AdminRole {
+  USER
+  SUPER_ADMIN
+  FINANCE_ADMIN
+  OPERATIONS_ADMIN
+  SUPPORT_ADMIN
+  AUDITOR
+}
+
+enum TransactionType {
+  TRANSFER
+  DEPOSIT
+  WITHDRAWAL
+  ADJUSTMENT
+  REVERSAL
+}
+
+enum TransactionStatus {
+  INITIATED
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REVERSED
+}
+
+enum EntryType {
+  DEBIT
+  CREDIT
+}
+
+model User {
+  id                 String             @id @default(uuid())
+  username           String             @unique
+  email              String             @unique
+  passwordHash       String
+  fullName           String
+  phone              String?
+  accountStatus      AccountStatus      @default(ACTIVE)
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  role               AdminRole          @default(USER)
+  isFrozen           Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  wallet          Wallet?
+  userProfile     UserProfile?
+  ledgerEntries   LedgerEntry[]
+  auditLogs       AuditLog[]
+  notifications   Notification[]
+  securityEvents  SecurityEvent[]
+  paymentRequests PaymentRequest[]
+  sentTransactions     LedgerTransaction[] @relation("SenderRelation")
+  receivedTransactions LedgerTransaction[] @relation("RecipientRelation")
+
+  @@index([email])
+  @@index([username])
+}
+
+model UserProfile {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileImage     String?
+  securitySettings Json?
+  lastLoginIp      String?
+  lastLoginAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Wallet {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletId  String    @unique // CSP-XXXXXXXXXXXX
+  isFrozen  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  accounts Account[]
+
+  @@index([walletId])
+  @@index([userId])
+}
+
+model Account {
+  id        String   @id @default(uuid())
+  walletId  String
+  wallet    Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  asset     String   // PHX, BTC, ETH, USDT etc.
+  type      String   @default("ASSET_HOLDING")
+  createdAt DateTime @default(now())
+
+  entries LedgerEntry[]
+
+  @@unique([walletId, asset])
+  @@index([walletId])
+  @@index([asset])
+}
+
+model LedgerTransaction {
+  id                 String            @id @default(uuid())
+  idempotencyKey     String?           @unique
+  type               TransactionType
+  status             TransactionStatus @default(PENDING)
+  senderId           String?
+  sender             User?             @relation("SenderRelation", fields: [senderId], references: [id])
+  senderWalletId     String?
+  recipientId        String?
+  recipient          User?             @relation("RecipientRelation", fields: [recipientId], references: [id])
+  recipientWalletId  String?
+  asset              String
+  amount             Decimal           @db.Decimal(36, 18)
+  fee                Decimal           @default(0) @db.Decimal(36, 18)
+  reference          String?
+  note               String?
+  reason             String?
+  reversalOfId       String?
+  metadata           Json?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  entries LedgerEntry[]
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([senderWalletId])
+  @@index([recipientWalletId])
+  @@index([status])
+  @@index([asset])
+  @@index([createdAt])
+}
+
+model LedgerEntry {
+  id            String            @id @default(uuid())
+  transactionId String
+  transaction   LedgerTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  accountId     String
+  account       Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entryType     EntryType
+  asset         String
+  amount        Decimal           @db.Decimal(36, 18)
+  createdAt     DateTime          @default(now())
+
+  @@index([accountId])
+  @@index([userId])
+  @@index([transactionId])
+}
+
+model AssetPrice {
+  id            String   @id @default(uuid())
+  asset         String   // PHX, BTC, ETH etc.
+  priceUsd      Decimal  @db.Decimal(36, 18)
+  currency      String   @default("USD")
+  effectiveFrom DateTime @default(now())
+  createdBy     String?
+  createdAt     DateTime @default(now())
+
+  @@index([asset])
+  @@index([effectiveFrom])
+}
+
+model PaymentRequest {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletId  String
+  asset     String   @default("PHX")
+  amount    Decimal? @db.Decimal(36, 18)
+  reference String?
+  isFulfilled Boolean@default(false)
+  createdAt DateTime @default(now())
+
+  @@index([walletId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  adminEmail String
+  action     String
+  targetType String
+  targetId   String
+  oldState   Json?
+  newState   Json?
+  reason     String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("INFO")
+  isRead    Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model SystemSettings {
+  id                  String   @id @default(uuid())
+  platformName        String   @default("CRYPTOSP")
+  maintenanceMode     Boolean  @default(false)
+  phoenixCoinPriceUsd Decimal  @default(10.00) @db.Decimal(18, 4)
+  minTransferAmount   Decimal  @default(0.0001) @db.Decimal(18, 8)
+  maxTransferAmount   Decimal  @default(100000.00) @db.Decimal(18, 4)
+  platformFeePercentage Decimal@default(0.00) @db.Decimal(5, 4)
+  mfaRequiredForAdmin Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
+}
+
+model SecurityEvent {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  eventType String
+  ipAddress String?
+  userAgent String?
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([eventType])
+}
