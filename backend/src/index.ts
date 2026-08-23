@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import { authRouter } from './routes/auth.router';
 import { walletRouter } from './routes/wallet.router';
@@ -10,7 +11,10 @@ import { marketRouter } from './routes/market.router';
 import { notificationRouter } from './routes/notification.router';
 import { adminRouter } from './routes/admin.router';
 
+// Load environment variables from local and root .env paths
 dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
 const app = express();
 const prisma = new PrismaClient();
