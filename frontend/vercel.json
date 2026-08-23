@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://cryptosp-api.onrender.com/api/$1"
+      "destination": "https://cryptosp.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
